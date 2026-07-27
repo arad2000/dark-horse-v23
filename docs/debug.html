@@ -1,20 +1,105 @@
 <!DOCTYPE html>
-<html>
-<head><meta charset="UTF-8"><title>Debug</title></head>
+<html dir="rtl" lang="fa">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug - عیب‌یابی اسب سیاه</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #0a0a0f; color: #e0e0e0; }
+        .ok { color: #4caf50; }
+        .err { color: #f44336; }
+        .info { color: #f0c040; }
+        pre { background: #1a1a2e; padding: 10px; border-radius: 8px; overflow-x: auto; }
+    </style>
+</head>
 <body>
-<h1>Testing JSON files</h1>
-<script>
-  async function test() {
-    try {
-      const res1 = await fetch('./data/micro_motives.json');
-      console.log('micro_motives.json:', res1.status, res1.ok);
-      const res2 = await fetch('./data/questions_v2.json');
-      console.log('questions_v2.json:', res2.status, res2.ok);
-    } catch(e) {
-      console.error('Error:', e);
-    }
-  }
-  test();
-</script>
+    <h1>🔍 عیب‌یابی فایل‌های اسب سیاه</h1>
+    <div id="output"></div>
+
+    <script>
+        const output = document.getElementById('output');
+
+        function log(msg, type = 'info') {
+            const p = document.createElement('p');
+            p.className = type;
+            p.textContent = msg;
+            output.appendChild(p);
+        }
+
+        async function testFile(path, name) {
+            try {
+                const res = await fetch(path);
+                if (res.ok) {
+                    const data = await res.json();
+                    log(`✅ ${name} (${path}) → Status: ${res.status} - بارگذاری شد`, 'ok');
+                    return data;
+                } else {
+                    log(`❌ ${name} (${path}) → Status: ${res.status} - فایل پیدا نشد`, 'err');
+                    return null;
+                }
+            } catch (e) {
+                log(`❌ ${name} (${path}) → Error: ${e.message}`, 'err');
+                return null;
+            }
+        }
+
+        async function testQuestions(data) {
+            if (!data) return;
+            log('📄 بررسی ساختار questions_v2.json:');
+            
+            // بررسی ساختارهای ممکن
+            if (data.layers && data.layers.strategies && data.layers.values) {
+                log(`✅ ساختار "layers.strategies" و "layers.values" وجود دارد`, 'ok');
+                log(`   تعداد سوالات راهبردی: ${data.layers.strategies.questions?.length || 0}`, 'info');
+                log(`   تعداد سوالات ارزشی: ${data.layers.values.questions?.length || 0}`, 'info');
+            } else if (data.layer_2_strategies && data.layer_3_values) {
+                log(`✅ ساختار "layer_2_strategies" و "layer_3_values" وجود دارد`, 'ok');
+                log(`   تعداد سوالات راهبردی: ${data.layer_2_strategies.questions?.length || 0}`, 'info');
+                log(`   تعداد سوالات ارزشی: ${data.layer_3_values.questions?.length || 0}`, 'info');
+            } else {
+                log(`❌ ساختار فایل questions_v2.json نامشخص است!`, 'err');
+                log(`   کلیدهای موجود: ${Object.keys(data).join(', ')}`, 'err');
+            }
+        }
+
+        async function testMicroMotives(data) {
+            if (!data) return;
+            log(`📄 بررسی micro_motives.json:`);
+            log(`   تعداد خرده‌انگیزه‌ها: ${data.length || 0}`, 'info');
+            if (data.length > 0) {
+                log(`   نمونه: ${data[0].code} → ${data[0].description_fa?.substring(0, 30)}...`, 'info');
+            }
+        }
+
+        async function main() {
+            log('🚀 شروع عیب‌یابی...', 'info');
+            log(`📁 مسیر فعلی: ${window.location.pathname}`, 'info');
+
+            // تست فایل‌ها
+            const motives = await testFile('./data/micro_motives.json', 'micro_motives.json');
+            const questions = await testFile('./data/questions_v2.json', 'questions_v2.json');
+
+            await testMicroMotives(motives);
+            await testQuestions(questions);
+
+            // بررسی data.js
+            log('📄 بررسی فایل data.js:');
+            try {
+                const res = await fetch('./data.js');
+                if (res.ok) {
+                    log(`✅ data.js (Status: ${res.status}) - بارگذاری شد`, 'ok');
+                } else {
+                    log(`❌ data.js (Status: ${res.status}) - بارگذاری نشد`, 'err');
+                }
+            } catch (e) {
+                log(`❌ data.js → Error: ${e.message}`, 'err');
+            }
+
+            log('✅ عیب‌یابی کامل شد.', 'info');
+            log('📌 لطفاً نتیجه را برای من بفرستید.', 'info');
+        }
+
+        main();
+    </script>
 </body>
 </html>
