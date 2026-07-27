@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اسب سیاه - نسخه تست</title>
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Vazirmatn', sans-serif; background: #0a0a0f; color: #e0e0e0; display: flex; justify-content: center; padding: 20px; }
+        .container { max-width: 500px; width: 100%; }
+        .card { background: #1a1a2e; border: 1px solid #d4af37; border-radius: 12px; padding: 20px; margin: 10px 0; }
+        .error { color: #ff6b6b; background: #2a0a0a; border: 1px solid #ff6b6b; padding: 15px; border-radius: 8px; margin: 10px 0; }
+        .success { color: #4caf50; }
+        .btn { background: #f0c040; color: #0a0a0f; border: none; padding: 12px 24px; border-radius: 50px; font-weight: bold; cursor: pointer; }
+        .btn:hover { opacity: 0.9; }
+        pre { background: #111; padding: 10px; border-radius: 8px; overflow-x: auto; font-size: 12px; }
+        .log { background: #111; padding: 8px; margin: 4px 0; border-radius: 4px; font-family: monospace; font-size: 13px; }
+        .log-error { color: #ff6b6b; }
+        .log-success { color: #4caf50; }
+        .log-info { color: #f0c040; }
+    </style>
+</head>
+<body>
+    <div class="container" id="app">
+        <div class="card">
+            <h1>🐴 اسب سیاه</h1>
+            <p style="color:#b0a080;">در حال بارگذاری...</p>
+            <div id="logs"></div>
+        </div>
+    </div>
+
+    <script>
+        // ========== سیستم لاگ‌گیری ==========
+        const logContainer = document.getElementById('logs');
+        const appContainer = document.getElementById('app');
+
+        function log(msg, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `log log-${type}`;
+            div.textContent = msg;
+            logContainer.appendChild(div);
+            console.log(msg);
+        }
+
+        function showError(msg) {
+            const div = document.createElement('div');
+            div.className = 'error';
+            div.innerHTML = `<strong>❌ ${msg}</strong>`;
+            appContainer.prepend(div);
+        }
+
+        // ========== بارگذاری داده‌ها ==========
+        log('🚀 شروع بارگذاری...', 'info');
+
+        async function loadData() {
+            try {
+                log('📥 بارگذاری micro_motives.json...', 'info');
+                const r1 = await fetch('./data/micro_motives.json');
+                if (!r1.ok) throw new Error(`HTTP ${r1.status}`);
+                const motives = await r1.json();
+                log(`✅ ${motives.length} خرده‌انگیزه بارگذاری شد.`, 'success');
+
+                log('📥 بارگذاری questions_v2.json...', 'info');
+                const r2 = await fetch('./data/questions_v2.json');
+                if (!r2.ok) throw new Error(`HTTP ${r2.status}`);
+                const questions = await r2.json();
+                log(`✅ سوالات بارگذاری شد.`, 'success');
+
+                log('📥 بارگذاری data.js...', 'info');
+                await import('./data.js');
+                log(`✅ data.js بارگذاری شد.`, 'success');
+
+                // بررسی متغیرهای data.js
+                if (typeof REALMS !== 'undefined') {
+                    log(`✅ REALMS: ${REALMS.length} قلمرو`, 'success');
+                } else {
+                    log('⚠️ REALMS تعریف نشده است!', 'error');
+                }
+
+                if (typeof SUB_REALMS !== 'undefined') {
+                    const count = Object.keys(SUB_REALMS).length;
+                    log(`✅ SUB_REALMS: ${count} زیرقلمرو`, 'success');
+                } else {
+                    log('⚠️ SUB_REALMS تعریف نشده است!', 'error');
+                }
+
+                // ========== بارگذاری app.js ==========
+                log('📥 بارگذاری app.js...', 'info');
+                try {
+                    await import('./app.js');
+                    log('✅ app.js بارگذاری شد.', 'success');
+                } catch (e) {
+                    log(`❌ خطا در بارگذاری app.js: ${e.message}`, 'error');
+                    showError(e.message);
+                    throw e;
+                }
+
+                log('✅ همه چیز با موفقیت بارگذاری شد!', 'success');
+                log('📌 اگر صفحه هنوز خالی است، خطا در حین رندر رخ داده است.', 'info');
+
+            } catch (e) {
+                log(`❌ خطا: ${e.message}`, 'error');
+                showError(e.message);
+                console.error(e);
+            }
+        }
+
+        // اجرا
+        loadData();
+    </script>
+</body>
+</html>
