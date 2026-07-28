@@ -88,16 +88,6 @@
     .btn:hover {
       opacity: 0.9;
     }
-    pre {
-      background: #111;
-      padding: 10px;
-      border-radius: 8px;
-      overflow-x: auto;
-      font-size: 12px;
-      color: #b0a080;
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
     .stack-trace {
       background: #1a0a0a;
       color: #ff6b6b;
@@ -110,6 +100,20 @@
       word-break: break-word;
       margin-top: 8px;
     }
+    .code-block {
+      background: #0a0a0f;
+      color: #f0c040;
+      padding: 10px;
+      border-radius: 5px;
+      border: 1px solid #333;
+      font-size: 12px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      margin-top: 8px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
   </style>
 </head>
 <body>
@@ -117,67 +121,124 @@
     <div class="card">
       <h1>🐴 اسب سیاه</h1>
       <p style="color:#b0a080;margin:10px 0;">
-        صفحه‌ی دیباگ نهایی - بارگذاری مانند فایل اصلی
+        صفحه‌ی دیباگ نهایی - نمایش خطای دقیق app.js
       </p>
       <div id="logs"></div>
       <div id="result"></div>
     </div>
   </div>
 
-  <!-- ====== بارگذاری data.js با try/catch ====== -->
   <script>
-    try {
-      // بارگذاری data.js (به صورت synchronous)
-      const script1 = document.createElement('script');
-      script1.src = 'data.js';
-      script1.onload = function () {
-        console.log('✅ data.js بارگذاری شد.');
-      };
-      script1.onerror = function () {
-        console.error('❌ خطا در بارگذاری data.js');
-        document.getElementById('logs').innerHTML +=
-          '<div class="log log-error">❌ خطا در بارگذاری data.js (فایل پیدا نشد یا خطای نحوی دارد)</div>';
-      };
-      document.head.appendChild(script1);
-    } catch (e) {
-      console.error('❌ خطا در بارگذاری data.js:', e);
-      document.getElementById('logs').innerHTML +=
-        '<div class="log log-error">❌ خطا در بارگذاری data.js: ' + e.message + '</div>';
-    }
-  </script>
+    // =======================================================
+    // ۱. بارگذاری data.js (به روش معمولی)
+    // =======================================================
+    (function loadDataJS() {
+      try {
+        const script = document.createElement('script');
+        script.src = 'data.js';
+        script.onload = function () {
+          addLog('✅ data.js بارگذاری شد.', 'success');
+          // بعد از بارگذاری data.js، app.js را بارگذاری می‌کنیم
+          loadAppJS();
+        };
+        script.onerror = function () {
+          addLog('❌ خطا در بارگذاری data.js (فایل پیدا نشد)', 'error');
+          showError('فایل data.js پیدا نشد یا قابل بارگذاری نیست.');
+        };
+        document.head.appendChild(script);
+      } catch (e) {
+        addLog('❌ خطا در بارگذاری data.js: ' + e.message, 'error');
+        showError(e.message);
+      }
+    })();
 
-  <!-- ====== بارگذاری app.js با try/catch ====== -->
-  <script>
-    try {
-      const script2 = document.createElement('script');
-      script2.src = 'app.js';
-      script2.onload = function () {
-        console.log('✅ app.js بارگذاری شد.');
-        // بعد از بارگذاری موفق، وضعیت را بررسی می‌کنیم
-        setTimeout(checkStatus, 500);
-      };
-      script2.onerror = function (e) {
-        console.error('❌ خطا در بارگذاری app.js:', e);
-        document.getElementById('logs').innerHTML +=
-          '<div class="log log-error">❌ خطا در بارگذاری app.js (فایل پیدا نشد یا خطای نحوی دارد)</div>';
-        showAppError('فایل app.js پیدا نشد یا خطای نحوی دارد.');
-      };
-      document.head.appendChild(script2);
-    } catch (e) {
-      console.error('❌ خطا در بارگذاری app.js:', e);
-      document.getElementById('logs').innerHTML +=
-        '<div class="log log-error">❌ خطا در بارگذاری app.js: ' + e.message + '</div>';
-      showAppError(e.message);
+    // =======================================================
+    // ۲. بارگذاری app.js با fetch و eval (برای گرفتن خطاها)
+    // =======================================================
+    function loadAppJS() {
+      addLog('📥 بارگذاری app.js با fetch...', 'info');
+      fetch('app.js')
+        .then(function (res) {
+          if (!res.ok) {
+            throw new Error('HTTP ' + res.status + ' - فایل app.js پیدا نشد');
+          }
+          return res.text();
+        })
+        .then(function (code) {
+          addLog('✅ app.js دریافت شد (' + code.length + ' کاراکتر)', 'success');
+          // بررسی سریع برای خطاهای نحوی با new Function
+          try {
+            // اجرا با eval در یک try/catch
+            eval(code);
+            addLog('✅ app.js با موفقیت اجرا شد (بدون خطای نحوی)', 'success');
+            // بعد از اجرا، وضعیت را بررسی می‌کنیم
+            setTimeout(checkStatus, 300);
+          } catch (e) {
+            addLog('❌ خطای نحوی در app.js: ' + e.message, 'error');
+            showError(
+              '❌ خطای نحوی (SyntaxError) در app.js:\n' +
+              e.message +
+              '\n\n' +
+              '📍 محل خطا: ' +
+              (e.lineNumber ? 'خط ' + e.lineNumber : 'نامشخص') +
+              (e.columnNumber ? ' - ستون ' + e.columnNumber : '') +
+              '\n\n' +
+              '📄 قطعه کد:\n' +
+              getCodeSnippet(code, e.lineNumber)
+            );
+          }
+        })
+        .catch(function (err) {
+          addLog('❌ خطا در دریافت app.js: ' + err.message, 'error');
+          showError('خطا در دریافت app.js: ' + err.message);
+        });
     }
 
-    // ====== تابع بررسی وضعیت ======
+    // =======================================================
+    // ۳. ابزارها
+    // =======================================================
+    function addLog(msg, type) {
+      type = type || 'info';
+      const logs = document.getElementById('logs');
+      const div = document.createElement('div');
+      div.className = 'log log-' + type;
+      div.textContent = msg;
+      logs.appendChild(div);
+      console.log(msg);
+    }
+
+    function showError(msg) {
+      const result = document.getElementById('result');
+      result.innerHTML =
+        '<div class="error-box">' +
+        msg.replace(/\n/g, '<br>') +
+        '<br><br><button class="btn" onclick="location.reload()">🔄 بارگذاری مجدد</button>' +
+        '</div>';
+    }
+
+    function getCodeSnippet(code, lineNumber) {
+      if (!lineNumber) return '(محل خطا مشخص نیست)';
+      const lines = code.split('\n');
+      const start = Math.max(0, lineNumber - 3);
+      const end = Math.min(lines.length, lineNumber + 2);
+      let snippet = '';
+      for (let i = start; i < end; i++) {
+        const prefix = (i + 1) === lineNumber ? '👉 ' : '   ';
+        snippet += prefix + (i + 1) + ': ' + lines[i] + '\n';
+      }
+      return snippet;
+    }
+
+    // =======================================================
+    // ۴. بررسی وضعیت بعد از اجرای app.js
+    // =======================================================
     function checkStatus() {
       const logs = document.getElementById('logs');
       const result = document.getElementById('result');
 
-      function log(msg, type = 'info') {
+      function log(msg, type) {
         const div = document.createElement('div');
-        div.className = 'log log-' + type;
+        div.className = 'log log-' + (type || 'info');
         div.textContent = msg;
         logs.appendChild(div);
         console.log(msg);
@@ -193,15 +254,13 @@
       }
 
       if (typeof SUB_REALMS !== 'undefined') {
-        var count = Object.keys(SUB_REALMS).length;
-        log('✅ SUB_REALMS: ' + count + ' زیرقلمرو', 'success');
+        log('✅ SUB_REALMS: ' + Object.keys(SUB_REALMS).length + ' زیرقلمرو', 'success');
       } else {
         log('❌ SUB_REALMS تعریف نشده است!', 'error');
       }
 
       if (typeof NARROW_PATHS !== 'undefined') {
-        var count2 = Object.keys(NARROW_PATHS).length;
-        log('✅ NARROW_PATHS: ' + count2 + ' مسیر باریک', 'success');
+        log('✅ NARROW_PATHS: ' + Object.keys(NARROW_PATHS).length + ' مسیر باریک', 'success');
       } else {
         log('❌ NARROW_PATHS تعریف نشده است!', 'error');
       }
@@ -227,63 +286,50 @@
         log('❌ تابع init تعریف نشده است!', 'error');
       }
 
-      // اگر state تعریف نشده، یعنی app.js کامل اجرا نشده
-      if (typeof state === 'undefined') {
-        log('⚠️ app.js بارگذاری شده اما متغیر state تعریف نشده است.', 'warn');
-        log('   احتمالاً خطای نحوی (SyntaxError) در app.js وجود دارد.', 'warn');
-        showAppError(
-          'خطا در app.js: متغیر state تعریف نشده است.\n' +
-          'این یعنی اسکریپت به‌طور کامل اجرا نشده است.\n' +
-          'احتمالاً یک خطای نحوی (SyntaxError) در فایل app.js وجود دارد.'
-        );
-        return;
-      }
-
-      // بررسی localStorage
-      try {
-        var saved = localStorage.getItem('darkhorse_session_v2');
-        if (saved) {
-          log('📦 session قبلی در localStorage وجود دارد (' + saved.length + ' کاراکتر)', 'info');
-        } else {
-          log('📦 هیچ session قبلی در localStorage نیست', 'info');
-        }
-      } catch (e) {
-        log('⚠️ خطا در دسترسی به localStorage: ' + e.message, 'warn');
-      }
-
-      log('✅ دیباگ کامل شد.', 'success');
-
-      // اگر همه چیز تعریف شده، سعی می‌کنیم render را دستی اجرا کنیم
+      // نتیجه‌گیری
       if (typeof state !== 'undefined' && typeof render !== 'undefined') {
-        log('🔄 تلاش برای اجرای دستی render()...', 'info');
+        log('✅ همه متغیرهای اصلی app.js تعریف شده‌اند.', 'success');
+        result.innerHTML =
+          '<div class="success-box">✅ app.js با موفقیت اجرا شد و همه متغیرها تعریف شده‌اند.<br><button class="btn" onclick="location.reload()">🔄 بارگذاری مجدد</button></div>';
+
+        // تلاش برای اجرای دستی render
         try {
+          log('🔄 تلاش برای اجرای دستی render()...', 'info');
           render();
           log('✅ render() با موفقیت اجرا شد.', 'success');
-          result.innerHTML =
-            '<div class="success-box">✅ render() با موفقیت اجرا شد. صفحه باید محتوا داشته باشد.</div>';
         } catch (e) {
           log('❌ خطا در اجرای render(): ' + e.message, 'error');
-          log('   ' + e.stack, 'error');
           result.innerHTML =
             '<div class="error-box">❌ خطا در render(): ' + e.message +
             '<br><div class="stack-trace">' + e.stack + '</div></div>';
         }
       } else {
-        // اگر state یا render تعریف نشده، خطا نشان بده
-        showAppError('state یا render تعریف نشده است. احتمالاً app.js کامل اجرا نشده است.');
+        log('❌ متغیرهای اصلی app.js تعریف نشده‌اند.', 'error');
+        log('   این یعنی app.js با خطا مواجه شده و کامل اجرا نشده است.', 'error');
+
+        // اگر state تعریف نشده ولی لاگ‌ها نشان می‌دهند که eval خطایی نداشته، احتمالاً خطا در داخل کد است
+        // اما چون eval خطای نحوی نداد، احتمالاً خطا در زمان اجرا (runtime) رخ داده
+        // مانند خطای "cannot read property of undefined" که در حین اجرای تابع init یا render رخ می‌دهد
+        // ولی ما اینجا نمی‌توانیم آن را بگیریم چون eval خطا را نمی‌دهد
+        // برای گرفتن این نوع خطاها، باید کد را با try/catch بپوشانیم
+        // اما از آنجایی که app.js را با eval اجرا کردیم، خطاهای runtime را هم می‌گیریم
+        // پس اگر اینجا هستیم یعنی خطای runtime رخ داده که eval آن را گرفته
+        // ولی eval خطا را گرفت و ادامه نداد، پس state تعریف نشد
+
+        // حالا باید بفهمیم خطای runtime دقیقاً چه بود
+        // برای این کار، کد را با try/catch در eval اجرا می‌کنیم
+        // اما قبلاً eval را اجرا کردیم و خطای runtime را نگرفتیم چون eval فقط خطاهای نحوی را می‌گیرد
+        // برای گرفتن خطاهای runtime، باید eval را در try/catch قرار دهیم
+        // که قبلاً این کار را کردیم. اگر خطایی رخ داده، در catch قرار می‌گیرد.
+        // اما چون خطایی نگرفتیم، یعنی eval موفق بوده ولی متغیرها تعریف نشده‌اند.
+        // یعنی app.js به دلیل خطای runtime کامل اجرا نشده است.
+        // برای گرفتن این خطاها، باید از window.onerror استفاده کنیم.
       }
     }
 
-    // ====== نمایش خطا ======
-    function showAppError(msg) {
-      const result = document.getElementById('result');
-      result.innerHTML =
-        '<div class="error-box">❌ خطا در app.js:<br><pre style="font-size:14px;color:#ff6b6b;">' +
-        msg +
-        '</pre><br><button class="btn" onclick="location.reload()">🔄 بارگذاری مجدد</button></div>';
-    }
-
-    // ====== گرفتن خطاهای کلی ======
+    // =======================================================
+    // ۵. گرفتن خطاهای کلی با window.onerror
+    // =======================================================
     window.onerror = function (message, source, lineno, colno, error) {
       console.error('❌ خطای کلی:', message, source, lineno, colno);
       const result = document.getElementById('result');
@@ -297,7 +343,8 @@
         'خط: ' + lineno +
         ' - ستون: ' + colno +
         (error && error.stack ? '\n\n' + error.stack : '') +
-        '</pre></div>';
+        '</pre><br><button class="btn" onclick="location.reload()">🔄 بارگذاری مجدد</button>' +
+        '</div>';
       return true;
     };
   </script>
