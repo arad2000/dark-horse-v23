@@ -1,162 +1,305 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🐴 اسب سیاه - دیباگ نهایی</title>
-    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet">
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Vazirmatn', sans-serif; background: #0a0a0f; color: #e0e0e0; padding: 20px; }
-        .container { max-width: 600px; margin: 0 auto; }
-        .card { background: #1a1a2e; border: 1px solid #d4af37; border-radius: 12px; padding: 20px; margin: 10px 0; }
-        .log { padding: 8px; margin: 4px 0; border-radius: 4px; font-family: monospace; font-size: 13px; border-right: 3px solid transparent; }
-        .log-info { border-color: #f0c040; color: #f0c040; background: #1a1a0a; }
-        .log-success { border-color: #4caf50; color: #4caf50; background: #0a1a0a; }
-        .log-error { border-color: #ff6b6b; color: #ff6b6b; background: #1a0a0a; }
-        .log-warn { border-color: #ff9800; color: #ff9800; background: #1a140a; }
-        .error-box { background: #2a0a0a; border: 2px solid #ff6b6b; padding: 15px; border-radius: 8px; margin: 15px 0; color: #ff6b6b; }
-        .success-box { background: #0a2a0a; border: 2px solid #4caf50; padding: 15px; border-radius: 8px; margin: 15px 0; color: #4caf50; }
-        .btn { background: #f0c040; color: #0a0a0f; border: none; padding: 10px 20px; border-radius: 50px; font-weight: bold; cursor: pointer; margin: 5px; }
-        .btn:hover { opacity: 0.9; }
-        pre { background: #111; padding: 10px; border-radius: 8px; overflow-x: auto; font-size: 12px; color: #b0a080; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🐴 اسب سیاه - دیباگ نهایی</title>
+  <link
+    href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css"
+    rel="stylesheet"
+  />
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Vazirmatn', sans-serif;
+      background: #0a0a0f;
+      color: #e0e0e0;
+      padding: 20px;
+    }
+    .container {
+      max-width: 700px;
+      margin: 0 auto;
+    }
+    .card {
+      background: #1a1a2e;
+      border: 1px solid #d4af37;
+      border-radius: 12px;
+      padding: 20px;
+      margin: 10px 0;
+    }
+    .log {
+      padding: 8px;
+      margin: 4px 0;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 13px;
+      border-right: 3px solid transparent;
+    }
+    .log-info {
+      border-color: #f0c040;
+      color: #f0c040;
+      background: #1a1a0a;
+    }
+    .log-success {
+      border-color: #4caf50;
+      color: #4caf50;
+      background: #0a1a0a;
+    }
+    .log-error {
+      border-color: #ff6b6b;
+      color: #ff6b6b;
+      background: #1a0a0a;
+    }
+    .log-warn {
+      border-color: #ff9800;
+      color: #ff9800;
+      background: #1a140a;
+    }
+    .error-box {
+      background: #2a0a0a;
+      border: 2px solid #ff6b6b;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 15px 0;
+      color: #ff6b6b;
+    }
+    .success-box {
+      background: #0a2a0a;
+      border: 2px solid #4caf50;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 15px 0;
+      color: #4caf50;
+    }
+    .btn {
+      background: #f0c040;
+      color: #0a0a0f;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 50px;
+      font-weight: bold;
+      cursor: pointer;
+      margin: 5px;
+    }
+    .btn:hover {
+      opacity: 0.9;
+    }
+    pre {
+      background: #111;
+      padding: 10px;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-size: 12px;
+      color: #b0a080;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .stack-trace {
+      background: #1a0a0a;
+      color: #ff6b6b;
+      border: 1px solid #ff6b6b;
+      padding: 10px;
+      border-radius: 5px;
+      font-size: 11px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      margin-top: 8px;
+    }
+  </style>
 </head>
 <body>
-    <div class="container" id="app">
-        <div class="card">
-            <h1>🐴 اسب سیاه</h1>
-            <p style="color:#b0a080;margin:10px 0;">صفحه‌ی دیباگ نهایی - بارگذاری مانند فایل اصلی</p>
-            <div id="logs"></div>
-            <div id="result"></div>
-        </div>
+  <div class="container" id="app">
+    <div class="card">
+      <h1>🐴 اسب سیاه</h1>
+      <p style="color:#b0a080;margin:10px 0;">
+        صفحه‌ی دیباگ نهایی - بارگذاری مانند فایل اصلی
+      </p>
+      <div id="logs"></div>
+      <div id="result"></div>
     </div>
+  </div>
 
-    <!-- ====== بارگذاری فایل‌ها مثل index.html اصلی ====== -->
-    <script src="data.js"></script>
-    <script src="app.js"></script>
+  <!-- ====== بارگذاری data.js با try/catch ====== -->
+  <script>
+    try {
+      // بارگذاری data.js (به صورت synchronous)
+      const script1 = document.createElement('script');
+      script1.src = 'data.js';
+      script1.onload = function () {
+        console.log('✅ data.js بارگذاری شد.');
+      };
+      script1.onerror = function () {
+        console.error('❌ خطا در بارگذاری data.js');
+        document.getElementById('logs').innerHTML +=
+          '<div class="log log-error">❌ خطا در بارگذاری data.js (فایل پیدا نشد یا خطای نحوی دارد)</div>';
+      };
+      document.head.appendChild(script1);
+    } catch (e) {
+      console.error('❌ خطا در بارگذاری data.js:', e);
+      document.getElementById('logs').innerHTML +=
+        '<div class="log log-error">❌ خطا در بارگذاری data.js: ' + e.message + '</div>';
+    }
+  </script>
 
-    <!-- ====== اسکریپت دیباگ ====== -->
-    <script>
-        (function() {
-            const logs = document.getElementById('logs');
-            const result = document.getElementById('result');
+  <!-- ====== بارگذاری app.js با try/catch ====== -->
+  <script>
+    try {
+      const script2 = document.createElement('script');
+      script2.src = 'app.js';
+      script2.onload = function () {
+        console.log('✅ app.js بارگذاری شد.');
+        // بعد از بارگذاری موفق، وضعیت را بررسی می‌کنیم
+        setTimeout(checkStatus, 500);
+      };
+      script2.onerror = function (e) {
+        console.error('❌ خطا در بارگذاری app.js:', e);
+        document.getElementById('logs').innerHTML +=
+          '<div class="log log-error">❌ خطا در بارگذاری app.js (فایل پیدا نشد یا خطای نحوی دارد)</div>';
+        showAppError('فایل app.js پیدا نشد یا خطای نحوی دارد.');
+      };
+      document.head.appendChild(script2);
+    } catch (e) {
+      console.error('❌ خطا در بارگذاری app.js:', e);
+      document.getElementById('logs').innerHTML +=
+        '<div class="log log-error">❌ خطا در بارگذاری app.js: ' + e.message + '</div>';
+      showAppError(e.message);
+    }
 
-            function log(msg, type = 'info') {
-                const div = document.createElement('div');
-                div.className = `log log-${type}`;
-                div.textContent = msg;
-                logs.appendChild(div);
-                console.log(msg);
-            }
+    // ====== تابع بررسی وضعیت ======
+    function checkStatus() {
+      const logs = document.getElementById('logs');
+      const result = document.getElementById('result');
 
-            // نمایش وضعیت بعد از بارگذاری
-            setTimeout(() => {
-                log('📋 بررسی وضعیت متغیرها...', 'info');
+      function log(msg, type = 'info') {
+        const div = document.createElement('div');
+        div.className = 'log log-' + type;
+        div.textContent = msg;
+        logs.appendChild(div);
+        console.log(msg);
+      }
 
-                // بررسی data.js
-                if (typeof REALMS !== 'undefined') {
-                    log(`✅ REALMS: ${REALMS.length} قلمرو`, 'success');
-                } else {
-                    log('❌ REALMS تعریف نشده است!', 'error');
-                }
+      log('📋 بررسی وضعیت متغیرها...', 'info');
 
-                if (typeof SUB_REALMS !== 'undefined') {
-                    const count = Object.keys(SUB_REALMS).length;
-                    log(`✅ SUB_REALMS: ${count} زیرقلمرو`, 'success');
-                } else {
-                    log('❌ SUB_REALMS تعریف نشده است!', 'error');
-                }
+      // بررسی data.js
+      if (typeof REALMS !== 'undefined') {
+        log('✅ REALMS: ' + REALMS.length + ' قلمرو', 'success');
+      } else {
+        log('❌ REALMS تعریف نشده است!', 'error');
+      }
 
-                if (typeof NARROW_PATHS !== 'undefined') {
-                    const count = Object.keys(NARROW_PATHS).length;
-                    log(`✅ NARROW_PATHS: ${count} مسیر باریک`, 'success');
-                } else {
-                    log('❌ NARROW_PATHS تعریف نشده است!', 'error');
-                }
+      if (typeof SUB_REALMS !== 'undefined') {
+        var count = Object.keys(SUB_REALMS).length;
+        log('✅ SUB_REALMS: ' + count + ' زیرقلمرو', 'success');
+      } else {
+        log('❌ SUB_REALMS تعریف نشده است!', 'error');
+      }
 
-                // بررسی app.js
-                if (typeof state !== 'undefined') {
-                    log(`✅ state (app.js) مقداردهی شده است`, 'success');
-                    log(`   stage: ${state.stage}`, 'info');
-                    log(`   sessionId: ${state.sessionId || '(ندارد)'}`, 'info');
-                } else {
-                    log('❌ state (app.js) تعریف نشده است!', 'error');
-                }
+      if (typeof NARROW_PATHS !== 'undefined') {
+        var count2 = Object.keys(NARROW_PATHS).length;
+        log('✅ NARROW_PATHS: ' + count2 + ' مسیر باریک', 'success');
+      } else {
+        log('❌ NARROW_PATHS تعریف نشده است!', 'error');
+      }
 
-                if (typeof render !== 'undefined') {
-                    log('✅ تابع render (app.js) تعریف شده است', 'success');
-                } else {
-                    log('❌ تابع render تعریف نشده است!', 'error');
-                }
+      // بررسی app.js
+      if (typeof state !== 'undefined') {
+        log('✅ state (app.js) مقداردهی شده است', 'success');
+        log('   stage: ' + state.stage, 'info');
+        log('   sessionId: ' + (state.sessionId || '(ندارد)'), 'info');
+      } else {
+        log('❌ state (app.js) تعریف نشده است!', 'error');
+      }
 
-                if (typeof init !== 'undefined') {
-                    log('✅ تابع init (app.js) تعریف شده است', 'success');
-                } else {
-                    log('❌ تابع init تعریف نشده است!', 'error');
-                }
+      if (typeof render !== 'undefined') {
+        log('✅ تابع render (app.js) تعریف شده است', 'success');
+      } else {
+        log('❌ تابع render تعریف نشده است!', 'error');
+      }
 
-                // بررسی اینکه آیا app.js خطایی در اجرا داشته
-                // اگر صفحه خالی است، یعنی render اجرا نشده
-                const appDiv = document.getElementById('app');
-                const hasContent = appDiv && appDiv.innerHTML.length > 100; // محتوای اصلی
+      if (typeof init !== 'undefined') {
+        log('✅ تابع init (app.js) تعریف شده است', 'success');
+      } else {
+        log('❌ تابع init تعریف نشده است!', 'error');
+      }
 
-                if (hasContent) {
-                    log('✅ app.js به نظر می‌رسد اجرا شده و محتوا تولید کرده است.', 'success');
-                    result.innerHTML = `
-                        <div class="success-box">
-                            ✅ به نظر می‌رسد app.js با موفقیت اجرا شده است.
-                            <br>صفحه باید محتوا داشته باشد. اگر نمی‌بینید، شاید خطای دیگری وجود دارد.
-                            <br><button class="btn" onclick="location.reload()">🔄 بارگذاری مجدد</button>
-                        </div>
-                    `;
-                } else {
-                    log('⚠️ app.js اجرا شده اما محتوایی در صفحه نیست (صفحه خالی).', 'warn');
-                    log('   احتمالاً خطایی در حین اجرای render() یا توابع قبل از آن رخ داده است.', 'warn');
-                    result.innerHTML = `
-                        <div class="error-box">
-                            ❌ app.js اجرا شده اما صفحه خالی است!
-                            <br>علت: احتمالاً خطایی در حین اجرای init() یا render() رخ داده است.
-                            <br><button class="btn" onclick="location.reload()">🔄 بارگذاری مجدد</button>
-                            <br><br>📌 لطفاً نتیجه را برای من بفرستید.
-                        </div>
-                    `;
-                }
+      // اگر state تعریف نشده، یعنی app.js کامل اجرا نشده
+      if (typeof state === 'undefined') {
+        log('⚠️ app.js بارگذاری شده اما متغیر state تعریف نشده است.', 'warn');
+        log('   احتمالاً خطای نحوی (SyntaxError) در app.js وجود دارد.', 'warn');
+        showAppError(
+          'خطا در app.js: متغیر state تعریف نشده است.\n' +
+          'این یعنی اسکریپت به‌طور کامل اجرا نشده است.\n' +
+          'احتمالاً یک خطای نحوی (SyntaxError) در فایل app.js وجود دارد.'
+        );
+        return;
+      }
 
-                // نمایش وضعیت session
-                try {
-                    const saved = localStorage.getItem('darkhorse_session_v2');
-                    if (saved) {
-                        log(`📦 session قبلی در localStorage وجود دارد (${saved.length} کاراکتر)`, 'info');
-                    } else {
-                        log('📦 هیچ session قبلی در localStorage نیست', 'info');
-                    }
-                } catch(e) {
-                    log(`⚠️ خطا در دسترسی به localStorage: ${e.message}`, 'warn');
-                }
+      // بررسی localStorage
+      try {
+        var saved = localStorage.getItem('darkhorse_session_v2');
+        if (saved) {
+          log('📦 session قبلی در localStorage وجود دارد (' + saved.length + ' کاراکتر)', 'info');
+        } else {
+          log('📦 هیچ session قبلی در localStorage نیست', 'info');
+        }
+      } catch (e) {
+        log('⚠️ خطا در دسترسی به localStorage: ' + e.message, 'warn');
+      }
 
-                log('✅ دیباگ کامل شد.', 'success');
+      log('✅ دیباگ کامل شد.', 'success');
 
-                // اگر state و render تعریف شده‌اند، سعی می‌کنیم render را دستی اجرا کنیم
-                if (typeof state !== 'undefined' && typeof render !== 'undefined') {
-                    log('🔄 تلاش برای اجرای دستی render()...', 'info');
-                    try {
-                        render();
-                        log('✅ render() با موفقیت اجرا شد.', 'success');
-                    } catch(e) {
-                        log(`❌ خطا در اجرای render(): ${e.message}`, 'error');
-                        log(`   ${e.stack}`, 'error');
-                        result.innerHTML += `
-                            <div class="error-box">
-                                ❌ خطا در render(): ${e.message}
-                                <br><pre>${e.stack}</pre>
-                            </div>
-                        `;
-                    }
-                }
+      // اگر همه چیز تعریف شده، سعی می‌کنیم render را دستی اجرا کنیم
+      if (typeof state !== 'undefined' && typeof render !== 'undefined') {
+        log('🔄 تلاش برای اجرای دستی render()...', 'info');
+        try {
+          render();
+          log('✅ render() با موفقیت اجرا شد.', 'success');
+          result.innerHTML =
+            '<div class="success-box">✅ render() با موفقیت اجرا شد. صفحه باید محتوا داشته باشد.</div>';
+        } catch (e) {
+          log('❌ خطا در اجرای render(): ' + e.message, 'error');
+          log('   ' + e.stack, 'error');
+          result.innerHTML =
+            '<div class="error-box">❌ خطا در render(): ' + e.message +
+            '<br><div class="stack-trace">' + e.stack + '</div></div>';
+        }
+      } else {
+        // اگر state یا render تعریف نشده، خطا نشان بده
+        showAppError('state یا render تعریف نشده است. احتمالاً app.js کامل اجرا نشده است.');
+      }
+    }
 
-            }, 1000); // یک ثانیه صبر می‌کنیم تا فایل‌ها بارگذاری شوند
-        })();
-    </script>
+    // ====== نمایش خطا ======
+    function showAppError(msg) {
+      const result = document.getElementById('result');
+      result.innerHTML =
+        '<div class="error-box">❌ خطا در app.js:<br><pre style="font-size:14px;color:#ff6b6b;">' +
+        msg +
+        '</pre><br><button class="btn" onclick="location.reload()">🔄 بارگذاری مجدد</button></div>';
+    }
+
+    // ====== گرفتن خطاهای کلی ======
+    window.onerror = function (message, source, lineno, colno, error) {
+      console.error('❌ خطای کلی:', message, source, lineno, colno);
+      const result = document.getElementById('result');
+      result.innerHTML =
+        '<div class="error-box">❌ خطای کلی در صفحه:<br>' +
+        '<pre style="font-size:14px;color:#ff6b6b;">' +
+        message +
+        '\n' +
+        'فایل: ' + source +
+        '\n' +
+        'خط: ' + lineno +
+        ' - ستون: ' + colno +
+        (error && error.stack ? '\n\n' + error.stack : '') +
+        '</pre></div>';
+      return true;
+    };
+  </script>
 </body>
 </html>
