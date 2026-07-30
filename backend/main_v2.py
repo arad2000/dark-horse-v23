@@ -1,23 +1,13 @@
-"""بازنویسی main_v2.py — سازگار با DarkHorseEngineV2 و فرانت‌اند"""
-import os
-import shutil
-
-BASE = "/storage/emulated/0/downloads/dark-horse-v23-deploy/backend"
-os.chdir(BASE)
-
-# پشتیبان‌گیری
-if os.path.exists("main_v2.py"):
-    shutil.copy2("main_v2.py", "main_v2.py.bak")
-
-main_code = r'''"""
-Dark Horse API V2 — سازگار با موتور یکپارچه (DarkHorseEngineV2)
-سازگار با فرانت‌اند: app.js / index.html (GitHub Pages)
 """
+Dark Horse API V2.1 — با موتور V2 (بدون تعارض، گرادیان و اطمینان)
+سازگار با فرانت‌اند (app.js) و سرور رندر
+"""
+
 import logging
 import os
 import uuid
 from contextlib import asynccontextmanager
-from typing import Dict, List
+from typing import List, Dict
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
@@ -36,10 +26,33 @@ class DarkHorseDiscoverRequest(BaseModel):
     conjoint_choices: Dict[str, str] = Field(default_factory=dict)
 
 
+# ======================= توابع کمکی =======================
+def get_fit_level(score: float) -> str:
+    if score >= 80:
+        return "همخوانی بسیار بالا"
+    elif score >= 60:
+        return "همخوانی بالا"
+    elif score >= 40:
+        return "همخوانی متوسط"
+    else:
+        return "همخوانی پایین"
+
+
+def extract_score_from_fit(fit: dict) -> float:
+    score = fit.get("score", 0)
+    if score == 0:
+        raw = fit.get("raw_components", {})
+        m = raw.get("m_score", 0) / 100
+        s = raw.get("s_score", 0) / 100
+        v = raw.get("v_score", 0) / 100
+        score = round((0.6 * m + 0.2 * s + 0.2 * v) * 100, 1)
+    return score
+
+
 # ======================= Lifespan =======================
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("🚀 Starting Dark Horse API V2 (unified engine) ...")
+    logger.info("🚀 Starting Dark Horse API V2 ...")
 
     # موتور رشته‌های دانشگاهی
     try:
@@ -72,7 +85,7 @@ async def lifespan(app: FastAPI):
 
 
 # ======================= FastAPI App =======================
-app = FastAPI(title="Dark Horse API V2", version="2.0-unified", lifespan=lifespan)
+app = FastAPI(title="Dark Horse API V2", version="2.0", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -87,7 +100,7 @@ app.add_middleware(
 async def root():
     return {
         "name": "Dark Horse API V2",
-        "engine_version": "unified-1.0",
+        "engine_version": "2.0",
         "status": "online",
     }
 
@@ -109,13 +122,15 @@ async def discover_v2(request: DarkHorseDiscoverRequest, req: Request):
         recommendations = []
         for item in discovery.get("discovered_majors", []):
             fit = item.get("individuality_fit", {})
+            score = extract_score_from_fit(fit)
+            level = fit.get("level", get_fit_level(score))
+
             recommendations.append({
                 "major_id": item.get("major_id"),
                 "major_name_fa": item.get("major_name_fa"),
                 "realm_fa": item.get("realm_fa"),
-                "cluster": item.get("cluster"),
-                "fit_score": fit.get("score", 0),
-                "fit_level": fit.get("level", ""),
+                "fit_score": score,
+                "fit_level": level,
                 "market_demand_level": fit.get("market_demand_level", 2),
                 "raw_components": fit.get("raw_components", {}),
                 "evidence": fit.get("evidence", {}),
@@ -161,12 +176,15 @@ async def branch_discovery_v2(request: DarkHorseDiscoverRequest, req: Request):
         branches = []
         for item in discovery.get("discovered_majors", []):
             fit = item.get("individuality_fit", {})
+            score = extract_score_from_fit(fit)
+            level = fit.get("level", get_fit_level(score))
+
             branches.append({
                 "branch_id": item.get("major_id"),
                 "branch_name_fa": item.get("major_name_fa"),
                 "group": item.get("realm_fa"),
-                "fit_score": fit.get("score", 0),
-                "fit_level": fit.get("level", ""),
+                "fit_score": score,
+                "fit_level": level,
                 "raw_components": fit.get("raw_components", {}),
                 "evidence": fit.get("evidence", {}),
                 "personalized_description": fit.get("personalized_description", ""),
@@ -191,11 +209,3 @@ async def branch_discovery_v2(request: DarkHorseDiscoverRequest, req: Request):
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main_v2:app", host="0.0.0.0", port=int(os.getenv("PORT", 8000)), reload=False)
-'''
-
-with open("main_v2.py", "w", encoding="utf-8") as f:
-    f.write(main_code)
-
-print(f"✅ main_v2.py بازنویسی شد ({len(main_code):,} کاراکتر)")
-print(f"📂 مسیر: {os.path.join(BASE, 'main_v2.py')}")
-print(f"📌 import: from dark_horse_engine_v2 import DarkHorseEngineV2")
