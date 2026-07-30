@@ -1,7 +1,7 @@
 """
-Dark Horse API V2.1 — ادغام موتور نسخه ۲.۳.۲
-شاخص‌های جدید: تعارض درونی وزن‌دار، گرادیان صعود، اطمینان، روایت دانش‌آموزی
+Dark Horse API V2.1 — با موتور V2 (بدون تعارض، گرادیان و اطمینان)
 """
+
 import json
 import logging
 import os
@@ -14,8 +14,8 @@ from typing import List, Optional
 from pydantic import BaseModel, Field
 import asyncio
 
-# ─── تغییر کلیدی: import موتور نسخه ۲.۳.۲ ───
-from darkhorse_v23 import DarkHorseEngineV23
+# ─── تغییر کلیدی: استفاده از موتور V2 ───
+from dark_horse_engine_v2 import DarkHorseEngineV2   # ← این خط را اصلاح کنید
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("darkhorse_api_v2")
@@ -23,7 +23,6 @@ logger = logging.getLogger("darkhorse_api_v2")
 
 # ======================= مدل‌های Pydantic =======================
 class DarkHorseDiscoverRequest(BaseModel):
-    """مدل درخواست — سازگار با موتور v23 و app.js"""
     micro_motives: list = Field(default_factory=list)
     sjt_answers: object = Field(default_factory=dict)
     conjoint_choices: object = Field(default_factory=dict)
@@ -38,7 +37,6 @@ class DarkHorseDiscoverRequest(BaseModel):
         return self.micro_motives or []
 
     def get_strategy(self) -> list:
-        """تبدیل sjt_answers (dict یا list) به List[int]"""
         raw = self.strategy_answers if self.strategy_answers else self.sjt_answers
         if not raw:
             return []
@@ -54,7 +52,6 @@ class DarkHorseDiscoverRequest(BaseModel):
         return []
 
     def get_values(self) -> list:
-        """تبدیل conjoint_choices (dict یا list) به List[str]"""
         raw = self.value_choices if self.value_choices else self.conjoint_choices
         if not raw:
             return []
@@ -70,33 +67,34 @@ class DarkHorseDiscoverRequest(BaseModel):
             return [str(x) for x in raw]
         return []
 
+
 # ======================= Lifespan =======================
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("🚀 Starting Dark Horse API V2.1 (Engine 2.3.2) ...")
+    logger.info("🚀 Starting Dark Horse API V2.1 (Engine V2) ...")
 
-    # ─── موتور رشته‌های دانشگاهی (نسخه ۲.۳.۲) ───
+    # ─── موتور رشته‌های دانشگاهی ───
     try:
-        app.state.engine = DarkHorseEngineV23(
+        app.state.engine = DarkHorseEngineV2(
             motives_path="micro_motives.json",
-            majors_path="majors_database_v2_final.json",   # ✅ نسخه نهایی اصلاح‌شده
-            trait_map_path="trait_map_v3.json",            # ✅ نسخه ۳ (۱۱۸ ویژگی)
+            majors_path="majors_database_v2_final.json",
+            trait_map_path="trait_map_v3.json",
             value_poles_path="value_poles_v2.json"
         )
-        logger.info("✅ DarkHorseEngineV23 (رشته‌ها) آماده است.")
+        logger.info("✅ DarkHorseEngineV2 (رشته‌ها) آماده است.")
     except Exception as e:
         logger.error(f"❌ Engine init failed: {e}")
         app.state.engine = None
 
-    # ─── موتور شاخه‌های دبیرستانی (نسخه ۲.۳.۲) ───
+    # ─── موتور شاخه‌های دبیرستانی ───
     try:
-        app.state.branch_engine = DarkHorseEngineV23(
+        app.state.branch_engine = DarkHorseEngineV2(
             motives_path="micro_motives.json",
             majors_path="school_branches_v2.json",
-            trait_map_path="trait_map_v3.json",            # ✅ نسخه ۳
+            trait_map_path="trait_map_v3.json",
             value_poles_path="value_poles_v2.json"
         )
-        logger.info("✅ DarkHorseEngineV23 (شاخه‌ها) آماده است.")
+        logger.info("✅ DarkHorseEngineV2 (شاخه‌ها) آماده است.")
     except Exception as e:
         logger.error(f"❌ BranchEngine init failed: {e}")
         app.state.branch_engine = None
@@ -121,13 +119,13 @@ app.add_middleware(
 async def root():
     return {
         "name": "Dark Horse API V2.1",
-        "engine_version": "2.3.2",
+        "engine_version": "2.1 (V2)",
         "status": "online",
         "features": [
-            "internal_conflict_index",
-            "gradient_alignment_index",
-            "confidence_index",
-            "individuality_insight",
+            "M-Score (خرده‌انگیزه‌ها)",
+            "S-Score (راهبردها)",
+            "V-Score (ارزش‌ها)",
+            "personalized_description",
         ]
     }
 
@@ -136,7 +134,7 @@ async def root():
 async def discover_v2(request: DarkHorseDiscoverRequest, req: Request):
     engine = req.app.state.engine
     if engine is None:
-        raise HTTPException(503, detail="موتور V2.1 در دسترس نیست")
+        raise HTTPException(503, detail="موتور V2 در دسترس نیست")
 
     try:
         discovery = await asyncio.to_thread(
@@ -159,10 +157,6 @@ async def discover_v2(request: DarkHorseDiscoverRequest, req: Request):
                 "raw_components": fit.get("raw_components", {}),
                 "evidence": fit.get("evidence", {}),
                 "personalized_description": fit.get("personalized_description", ""),
-                # ─── فیلدهای جدید نسخه ۲.۳.۲ ───
-                "internal_conflict": fit.get("internal_conflict", {}),
-                "gradient_alignment": fit.get("gradient_alignment", {}),
-                "individuality_insight": fit.get("individuality_insight", ""),
             })
 
         recommendations.sort(key=lambda x: x["fit_score"], reverse=True)
@@ -178,8 +172,6 @@ async def discover_v2(request: DarkHorseDiscoverRequest, req: Request):
                 "recommendations": recommendations,
                 "method": discovery.get("method", {}),
                 "summary": discovery.get("summary", {}),
-                # ─── شاخص اطمینان سراسری (جدید) ───
-                "confidence": discovery.get("summary", {}).get("confidence", {}),
                 "next_step": discovery.get("next_step", ""),
             },
         }
@@ -192,7 +184,7 @@ async def discover_v2(request: DarkHorseDiscoverRequest, req: Request):
 async def branch_discovery_v2(request: DarkHorseDiscoverRequest, req: Request):
     engine = req.app.state.branch_engine
     if engine is None:
-        raise HTTPException(503, detail="موتور شاخه‌ها V2.1 در دسترس نیست")
+        raise HTTPException(503, detail="موتور شاخه‌ها در دسترس نیست")
 
     try:
         discovery = await asyncio.to_thread(
@@ -214,10 +206,6 @@ async def branch_discovery_v2(request: DarkHorseDiscoverRequest, req: Request):
                 "raw_components": fit.get("raw_components", {}),
                 "evidence": fit.get("evidence", {}),
                 "personalized_description": fit.get("personalized_description", ""),
-                # ─── فیلدهای جدید نسخه ۲.۳.۲ ───
-                "internal_conflict": fit.get("internal_conflict", {}),
-                "gradient_alignment": fit.get("gradient_alignment", {}),
-                "individuality_insight": fit.get("individuality_insight", ""),
             })
 
         branches.sort(key=lambda x: x["fit_score"], reverse=True)
@@ -229,7 +217,6 @@ async def branch_discovery_v2(request: DarkHorseDiscoverRequest, req: Request):
                 "branches": branches,
                 "method": discovery.get("method", {}),
                 "summary": discovery.get("summary", {}),
-                "confidence": discovery.get("summary", {}).get("confidence", {}),
             },
         }
     except Exception:
