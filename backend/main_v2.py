@@ -1,5 +1,6 @@
 """
 Dark Horse API V2.1 — با موتور V2 (بدون تعارض، گرادیان و اطمینان)
+اصلاح شده برای نمایش صحیح fit_score و fit_level
 """
 
 import json
@@ -14,8 +15,8 @@ from typing import List, Optional
 from pydantic import BaseModel, Field
 import asyncio
 
-# ─── تغییر کلیدی: استفاده از موتور V2 ───
-from dark_horse_engine_v2 import DarkHorseEngineV2   # ← این خط را اصلاح کنید
+# ─── استفاده از موتور V2 (بدون شاخص‌های اضافی) ───
+from dark_horse_engine_v2 import DarkHorseEngineV2
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("darkhorse_api_v2")
@@ -114,6 +115,32 @@ app.add_middleware(
 )
 
 
+# ======================= توابع کمکی =======================
+def get_fit_level(score: float) -> str:
+    """تعیین سطح همخوانی بر اساس امتیاز"""
+    if score >= 80:
+        return "همخوانی بسیار بالا"
+    elif score >= 60:
+        return "همخوانی بالا"
+    elif score >= 40:
+        return "همخوانی متوسط"
+    else:
+        return "همخوانی پایین"
+
+
+def extract_score_from_fit(fit: dict) -> float:
+    """استخراج امتیاز از individuality_fit با fallback"""
+    score = fit.get("score", 0)
+    if score == 0:
+        # محاسبه دستی از مؤلفه‌ها
+        raw = fit.get("raw_components", {})
+        m = raw.get("m_score", 0) / 100
+        s = raw.get("s_score", 0) / 100
+        v = raw.get("v_score", 0) / 100
+        score = round((0.6 * m + 0.2 * s + 0.2 * v) * 100, 1)
+    return score
+
+
 # ======================= Endpoints =======================
 @app.get("/")
 async def root():
@@ -147,12 +174,17 @@ async def discover_v2(request: DarkHorseDiscoverRequest, req: Request):
         recommendations = []
         for item in discovery.get("discovered_majors", []):
             fit = item.get("individuality_fit", {})
+            
+            # استخراج score با fallback
+            score = extract_score_from_fit(fit)
+            level = fit.get("level", get_fit_level(score))
+            
             recommendations.append({
                 "major_id": item.get("major_id"),
                 "major_name_fa": item.get("major_name_fa"),
                 "realm_fa": item.get("realm_fa"),
-                "fit_score": fit.get("score", 0),
-                "fit_level": fit.get("level", ""),
+                "fit_score": score,
+                "fit_level": level,
                 "market_demand_level": fit.get("market_demand_level", 2),
                 "raw_components": fit.get("raw_components", {}),
                 "evidence": fit.get("evidence", {}),
@@ -197,12 +229,17 @@ async def branch_discovery_v2(request: DarkHorseDiscoverRequest, req: Request):
         branches = []
         for item in discovery.get("discovered_majors", []):
             fit = item.get("individuality_fit", {})
+            
+            # استخراج score با fallback
+            score = extract_score_from_fit(fit)
+            level = fit.get("level", get_fit_level(score))
+            
             branches.append({
                 "branch_id": item.get("major_id"),
                 "branch_name_fa": item.get("major_name_fa"),
                 "group": item.get("realm_fa"),
-                "fit_score": fit.get("score", 0),
-                "fit_level": fit.get("level", ""),
+                "fit_score": score,
+                "fit_level": level,
                 "raw_components": fit.get("raw_components", {}),
                 "evidence": fit.get("evidence", {}),
                 "personalized_description": fit.get("personalized_description", ""),
