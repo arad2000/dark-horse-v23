@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+*.pyo
+*.bak
+*.json.bak
+*_backup_*
+.env
+*.log
+.DS_Store
