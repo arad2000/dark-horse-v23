@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: dark-horse-v23
+    env: python
+    region: frankfurt
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main_v2:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /
+    autoDeploy: true
