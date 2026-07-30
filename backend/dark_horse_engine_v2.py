@@ -1,6 +1,6 @@
 """
-Dark Horse Engine V2.1 — با فرمول جدید S-Score (نرمالیزه با حداکثر)
-و پشتیبانی از trait_map_v3 (هر گزینه چندین ویژگی)
+Dark Horse Engine V2.1 — بدون شاخص‌های تعارض، گرادیان و اطمینان
+فقط M-Score، S-Score، V-Score و توضیحات شخصی‌سازی‌شده
 """
 
 import json
@@ -16,17 +16,16 @@ class DarkHorseEngineV2:
         self,
         motives_path: str = "micro_motives.json",
         majors_path: str = "majors_database_v2_final.json",
-        trait_map_path: str = "trait_map_v3.json",  # ← نسخه جدید (چند ویژگی)
+        trait_map_path: str = "trait_map_v3.json",
         value_poles_path: str = "value_poles_v2.json"
     ):
         self.motives_map: Dict[str, str] = {}
         self.majors_db: Dict[str, Dict] = {}
-        self.trait_map: Dict[str, Dict[int, List[str]]] = {}  # S01 → {0: ["a","b"], ...}
+        self.trait_map: Dict[str, Dict[int, List[str]]] = {}
         self.value_poles: Dict[str, str] = {}
         self._load_data(motives_path, majors_path, trait_map_path, value_poles_path)
 
     def _load_data(self, motives_path, majors_path, trait_map_path, value_poles_path):
-        # بارگذاری میکروموتیوها
         try:
             self.motives_map = self._load_json(motives_path, key_field="code", value_field="description_fa")
             logger.info(f"✅ {len(self.motives_map)} میکروموتیو بارگذاری شد.")
@@ -34,7 +33,6 @@ class DarkHorseEngineV2:
             logger.error(f"خطا در بارگذاری میکروموتیوها: {e}")
             self.motives_map = {}
 
-        # بارگذاری رشته‌ها
         try:
             self.majors_db = self._load_json(majors_path, key_field="id")
             logger.info(f"✅ {len(self.majors_db)} رشته/شاخه بارگذاری شد.")
@@ -42,7 +40,6 @@ class DarkHorseEngineV2:
             logger.error(f"خطا در بارگذاری رشته‌ها/شاخه‌ها: {e}")
             self.majors_db = {}
 
-        # بارگذاری trait_map نسخه ۳ (چند ویژگی در هر گزینه)
         try:
             with open(trait_map_path, "r", encoding="utf-8") as f:
                 raw = json.load(f)
@@ -55,7 +52,6 @@ class DarkHorseEngineV2:
             logger.error(f"خطا در بارگذاری trait_map_v3: {e}")
             self.trait_map = {}
 
-        # بارگذاری value_poles
         try:
             with open(value_poles_path, "r", encoding="utf-8") as f:
                 self.value_poles = json.load(f)
@@ -109,10 +105,6 @@ class DarkHorseEngineV2:
 
         return min(1.0, score), matched_details
 
-    # ════════════════════════════════════════════════════════════
-    #  لایه دوم: S-Score با فرمول جدید (نرمالیزه با حداکثر)
-    #  فرمول: S = (1/25) * Σ(chosen_w / max_w)
-    # ════════════════════════════════════════════════════════════
     def _compute_s_score(self, strategy_answers: List[int], strategy_weights: List[List[float]]) -> Tuple[float, List[str]]:
         if not strategy_weights or not strategy_answers:
             return 0.0, []
@@ -130,14 +122,11 @@ class DarkHorseEngineV2:
 
             max_w = max(row) if row else 1.0
             chosen_w = row[idx] if 0 <= idx < len(row) else 0.0
-
-            # ✅ فرمول جدید ارزیاب: نرمالیزه با حداکثر
             normalized = chosen_w / max_w if max_w > 0 else 0.0
 
             total_score += normalized
             valid += 1
 
-            # ثبت ویژگی‌های برجسته (با استفاده از trait_map_v3)
             if normalized >= 0.7:
                 q_num = i + 1
                 question_key = f"S{str(q_num).zfill(2)}"
@@ -149,7 +138,7 @@ class DarkHorseEngineV2:
                     highlights.append(f"گزینه {idx+1} با این رشته هم‌خوانی بالایی دارد ({int(normalized*100)}%)")
 
         final_score = (total_score / valid) if valid > 0 else 0.0
-        return final_score, highlights  # بازه ۰ تا ۱
+        return final_score, highlights
 
     def _compute_v_score(self, value_choices: List[str], value_weights: Dict[str, float]) -> Tuple[float, List[str]]:
         if not value_choices or not value_weights:
@@ -199,7 +188,6 @@ class DarkHorseEngineV2:
             return "همخوانی پایین"
 
     def _extract_s_misaligned_traits(self, strategy_answers, strategy_weights):
-        """استخراج ویژگی‌هایی که کاربر انتخاب کرده اما وزن کمی دارند"""
         traits = []
         for i, row in enumerate(strategy_weights):
             if i >= len(strategy_answers):
@@ -207,7 +195,7 @@ class DarkHorseEngineV2:
             idx = strategy_answers[i]
             if idx < 0 or idx >= len(row):
                 continue
-            if row[idx] < 0.3:  # وزن پایین
+            if row[idx] < 0.3:
                 q_num = i + 1
                 question_key = f"S{str(q_num).zfill(2)}"
                 trait_list = self.trait_map.get(question_key, {}).get(idx, [])
@@ -277,18 +265,13 @@ class DarkHorseEngineV2:
 
         return desc
 
-    # ════════════════════════════════════════════════════════════
-    #  متد اصلی
-    # ════════════════════════════════════════════════════════════
     def discover_individuality(self, user_motives, sjt_answers, conjoint_choices):
-        # تبدیل پاسخ‌های SJT
         strategy_answers = []
         for i in range(1, 26):
             key = f"sjt_{i}"
             ans = (sjt_answers or {}).get(key, "").strip().upper()
             strategy_answers.append(ord(ans) - ord('A') if len(ans) == 1 and 'A' <= ans <= 'E' else -1)
 
-        # تبدیل پاسخ‌های ارزشی
         value_choices = []
         for i in range(1, 16):
             key = f"conj_{i}"
@@ -356,7 +339,7 @@ class DarkHorseEngineV2:
                 "low_compatibility": low
             },
             "method": {
-                "principle": "کشف فردیت — نسخه ۲.۱ (فرمول جدید S-Score)",
+                "principle": "کشف فردیت — نسخه ۲.۱ (بدون شاخص‌های اضافی)",
                 "scoring": "Total = 0.60×M + 0.20×S + 0.20×V",
                 "s_score_formula": "S = (1/25) * Σ(chosen_w / max_w)",
                 "filter": "نمایش رشته‌ها با Total ≥ 30% و M ≥ 15%",
